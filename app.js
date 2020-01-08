@@ -5,8 +5,6 @@ const urlCashIn = ('http://private-38e18c-uzduotis.apiary-mock.com/config/cash-i
 const urlCashOutNatural = ('http://private-38e18c-uzduotis.apiary-mock.com/config/cash-out/natural');
 const urlCashOutJuridical = ('http://private-38e18c-uzduotis.apiary-mock.com/config/cash-out/juridical');
 
-// let dataFileJson;
-
 let currentCutOffDate = '';
 let allowanceArray = [];
 let userArray = [];
@@ -15,6 +13,7 @@ let userRemainingAllowance;
 let adj;
 let adjBaseAmount;
 let userWeek;
+let outputArray = [];
 
 const openInputFile = () => {
   let dataFileJson;
@@ -40,7 +39,6 @@ const checkWeek = (element, lookBack, dataFileJson) => {
   let currentUser = element.user_id;
   let currentDate = new Date(element.date);
   let cutOffDate = checkCutOffDate(element, lookBack);
-  // let dataFileJson = openInputFile();
   userWeek = dataFileJson
     .filter(trans => {
       trans.date = new Date(trans.date);
@@ -137,7 +135,7 @@ const computeCashOutJuridical = (element, ratesCashOutJuridical) => {
   return finalCommission;
 }
 
-const app = async () => {
+const compute = async (dataFileJson) => {
   let responseCashIn = await fetch(urlCashIn)
   let ratesCashIn = await responseCashIn.json()
   let responseCashOutNatural = await fetch(urlCashOutNatural)
@@ -145,22 +143,23 @@ const app = async () => {
   let responseCashOutJuridical = await fetch(urlCashOutJuridical)
   let ratesCashOutJuridical = await responseCashOutJuridical.json()
   
-  dataFileJson = openInputFile();
-
   dataFileJson.forEach(element => {
     switch (element.type) {
       case 'cash_in':
         finalCommission = computeCashIn(element, ratesCashIn);
+        outputArray.push(finalCommission.toString());
         console.log(finalCommission);
         break;
       case 'cash_out':
         switch (element.user_type) {
           case 'natural':
             finalCommission = computeCashOutNatural(element, ratesCashOutNatural, dataFileJson);
+            outputArray.push(finalCommission.toString());
             console.log(finalCommission);
             break;
           case 'juridical':
             finalCommission = computeCashOutJuridical(element, ratesCashOutJuridical);
+            outputArray.push(finalCommission.toString());
             console.log(finalCommission);
             break;
           default:
@@ -171,12 +170,18 @@ const app = async () => {
         console.log('unknown transaction type');
     }
   })  
+  return outputArray;
+}
+
+const app = () => {
+  dataFileJson = openInputFile();
+  compute(dataFileJson);
 }
 
 app();
 
 module.exports = {
-  app,
+  compute,
   computeCashIn,
   computeCashOutNatural,
   computeCashOutJuridical,
